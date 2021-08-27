@@ -1,8 +1,8 @@
 # LATOKEN C# Client Library (Early Beta version)
 
-LATOKEN C# Client Library aims to help developers who are planning to integrate with the [LATOKEN trading API](https://api.latoken.com/doc/v2/). Please, note that the library in Early Beta, and some functinality might not be impelmented. 
+LATOKEN C# Client Library aims to help developers to integrate with the [LATOKEN trading API](https://api.latoken.com/doc/v2/). 
 
-**Please note, that LATOKEN doesn't take any responsibility for the damages occurred while using this code.**
+**Please note that the library in Early Beta, and LATOKEN doesn't take any responsibility for the damages occurred while using this code.
 **If you think something is broken or missing, please create an [issue](https://github.com/LATOKEN/latoken-api-v2-dotnet-client/issues).**
 
 
@@ -18,13 +18,13 @@ Make sure you have installed these Nuget packages:
 
 
 **LARestClient** - the client to interact with the LATOKEN REST API.
-For example, **Get a list of all accounts**
+For example, 
+**Get a list of all accounts**
 ````C#
     var latokenRestClient =
             new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
 
-    //Generate your public and private API keys on the Profile/API Keys webpage https://latoken.com/account/apikeys
-    //Make sure that you grant the right permissions for your keys
+    //Generate your public and private API keys on the [Profile/API Keys webpage](https://latoken.com/account/apikeys)    
     ClientCredentials credentials = new ClientCredentials
     {
         ApiKey = "Your Public API Key",
@@ -40,8 +40,7 @@ For example, **Get a list of all accounts**
     var latokenRestClient =
             new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
 
-    //Generate your public and private API keys on the Profile/API Keys webpage https://latoken.com/account/apikeys
-    //Make sure that you grant the right permissions for your keys
+    //Generate your public and private API keys on the [Profile/API Keys webpage](https://latoken.com/account/apikeys)
     ClientCredentials credentials = new ClientCredentials
     {
         ApiKey = "Your Public API Key",
@@ -65,7 +64,7 @@ For example, **Get a list of all accounts**
     OrderResponse result = latokenRestClient.PlaceOrder(orderCommand).Result;
 ````
 
-##Supported REST endpoints (LARestClient class)
+## Supported REST endpoints (LARestClient class)
 Information about our REST API specification [LATOKEN API v2 docs](https://api.latoken.com/doc/v2/)
 | Method | Description | LATOKEN APIv2 Link |
 | ----------- | ----------- | ---------|
@@ -93,6 +92,7 @@ Information about our REST API specification [LATOKEN API v2 docs](https://api.l
 
 
 **LAWsClient** - the client to interact with the LATOKEN WebSocket API.
+
 For example, **Get order book for FREE/USDT pair**
 ````C#
 
@@ -148,7 +148,7 @@ For example, **Get order book for FREE/USDT pair**
         }
 
 ````
-##Supported WebSockets endpoints (LAWsClient class)
+## Supported WebSockets endpoints (LAWsClient class)
 Information about our WebSocket API specification [LATOKEN API v2 docs](https://api.latoken.com/doc/ws/)
 | Method | Description | LATOKEN APIv2 Link |
 | ----------- | ----------- | ---------|
