@@ -2,7 +2,7 @@
 
 LATOKEN C# Client Library aims to help developers to integrate with the [LATOKEN trading API](https://api.latoken.com/doc/v2/). 
 
-**Please note that the library in Early Beta, and LATOKEN doesn't take any responsibility for the damages occurred while using this code.
+**Please note that the library in Early Beta, and LATOKEN doesn't take any responsibility for the damages occurred while using this code.**
 **If you think something is broken or missing, please create an [issue](https://github.com/LATOKEN/latoken-api-v2-dotnet-client/issues).**
 
 
@@ -10,21 +10,21 @@ LATOKEN C# Client Library aims to help developers to integrate with the [LATOKEN
 ## Getting started
 
 Make sure you have installed these Nuget packages:
-`Microsoft.Extensions.Logging Version: 5.0.0`
-`Newtonsoft.Json Version 12.0.3`
-`Serilog Version: 2.8.0`
-`Websocket.Client Version: 4.3.35`
-`MathNet.Numerics Version: 4.15.0`
+* Microsoft.Extensions.Logging Version: 5.0.0
+* Newtonsoft.Json Version 12.0.3
+* Serilog Version: 2.8.0
+* Websocket.Client Version: 4.3.35
+* MathNet.Numerics Version: 4.15.0
 
 
-**LARestClient** - the client to interact with the LATOKEN REST API.
-For example, 
+## LARestClient class to interract with the REST API
+
 **Get a list of all accounts**
 ````C#
     var latokenRestClient =
             new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
 
-    //Generate your public and private API keys on the [Profile/API Keys webpage](https://latoken.com/account/apikeys)    
+    //Generate your public and private API keys on this page https://latoken.com/account/apikeys
     ClientCredentials credentials = new ClientCredentials
     {
         ApiKey = "Your Public API Key",
@@ -40,7 +40,7 @@ For example,
     var latokenRestClient =
             new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
 
-    //Generate your public and private API keys on the [Profile/API Keys webpage](https://latoken.com/account/apikeys)
+    //Generate your public and private API keys on this page https://latoken.com/account/apikeys
     ClientCredentials credentials = new ClientCredentials
     {
         ApiKey = "Your Public API Key",
@@ -64,8 +64,10 @@ For example,
     OrderResponse result = latokenRestClient.PlaceOrder(orderCommand).Result;
 ````
 
-## Supported REST endpoints (LARestClient class)
-Information about our REST API specification [LATOKEN API v2 docs](https://api.latoken.com/doc/v2/)
+
+**Supported REST endpoints (LARestClient class)**
+
+Information about our REST API specification [LATOKEN API v2 docs](https://api.latoken.com/doc/v2/).
 | Method | Description | LATOKEN APIv2 Link |
 | ----------- | ----------- | ---------|
 |`GetPairs`|Request list of all active trading pairs| [getAvailablePairs](https://api.latoken.com/doc/v2/#operation/getAvailablePairs)
@@ -88,12 +90,12 @@ Information about our REST API specification [LATOKEN API v2 docs](https://api.l
 |`GetOrderBook`|Get order book snapshot for a given pair| [getOrderBook](https://api.latoken.com/doc/v2/#tag/BookController)
 |`GetTickers`|Request tickers for all pairs| [getAllTickers](https://api.latoken.com/doc/v2/#operation/getAllTickers)
 |`GetTicker`|Request ticker for pair| [getTicker](https://api.latoken.com/doc/v2/#operation/getTicker)
+ 
+ 
+    
+ ## LAWsClient class to interact with the WebSocket API
 
-
-
-**LAWsClient** - the client to interact with the LATOKEN WebSocket API.
-
-For example, **Get order book for FREE/USDT pair**
+**Get order book for FREE/USDT pair**
 ````C#
 
        var latokenRestClient =
@@ -148,8 +150,9 @@ For example, **Get order book for FREE/USDT pair**
         }
 
 ````
-## Supported WebSockets endpoints (LAWsClient class)
-Information about our WebSocket API specification [LATOKEN API v2 docs](https://api.latoken.com/doc/ws/)
+**Supported WebSockets endpoints (LAWsClient class)**
+
+Information about our WebSocket API specification [LATOKEN API v2 docs](https://api.latoken.com/doc/ws/).
 | Method | Description | LATOKEN APIv2 Link |
 | ----------- | ----------- | ---------|
 |`SubscribeOrderBookEvents`|Subscribe for order book events for a pair| [Books](https://api.latoken.com/doc/ws/#section/Books)
