@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace Latoken_CSharp_Client_Library
+namespace Latoken.Api.Client.Library
 {
     public class OrderResponse
     {

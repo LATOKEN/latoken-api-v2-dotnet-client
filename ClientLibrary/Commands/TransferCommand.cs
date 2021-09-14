@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Latoken_CSharp_Client_Library.LA.Commands
+namespace Latoken.Api.Client.Library.LA.Commands
 {
     public class TransferCommand
     {

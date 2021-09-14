@@ -1,6 +1,5 @@
-﻿using System.ComponentModel;
-
-namespace Latoken_CSharp_Client_Library.Types
+﻿
+namespace Latoken.Api.Client.Library.Types
 {
     public enum OrderType
     {

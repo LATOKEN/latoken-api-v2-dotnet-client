@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
-namespace Latoken_CSharp_Client_Library.Commands.Stomp
+namespace Latoken.Api.Client.Library.Commands.Stomp
 {
     public class StompFrame
     {

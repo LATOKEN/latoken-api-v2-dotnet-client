@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Latoken_CSharp_Client_Library.Dto.Rest
+namespace Latoken.Api.Client.Library.Dto.Rest
 {
     public class AssetAddressBinding
     {

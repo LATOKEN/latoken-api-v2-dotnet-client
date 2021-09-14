@@ -1,4 +1,4 @@
-﻿namespace Latoken_CSharp_Client_Library.Constants
+﻿namespace Latoken.Api.Client.Library.Constants
 {
     public class LAHeaders
     {

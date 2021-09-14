@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace LatokenLatoken_CSharp_Client_Library.Dto.WS
+namespace Latoken.Api.Client.Library.Dto.WS
 {
-    public class MyTrade : Latoken_CSharp_Client_Library.Trade
+    public class MyTrade : Trade
     {
         [JsonProperty(PropertyName = "order")]
         public string Order { get; set; }

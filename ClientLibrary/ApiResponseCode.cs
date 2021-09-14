@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 
-namespace Latoken_CSharp_Client_Library
+namespace Latoken.Api.Client.Library
 {
     public enum ApiResponseCode
     {

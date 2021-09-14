@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Latoken_CSharp_Client_Library
+namespace Latoken.Api.Client.Library
 {
     public class CancelAllOrdersResponce
     {

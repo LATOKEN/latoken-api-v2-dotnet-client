@@ -1,9 +1,9 @@
-﻿using Latoken_CSharp_Client_Library.Types;
+﻿using Latoken.Api.Client.Library.Types;
 using Newtonsoft.Json;
 using System;
 using System.Globalization;
 
-namespace Latoken_CSharp_Client_Library.Commands
+namespace Latoken.Api.Client.Library.Commands
 {
     public class OrderCommand
     {

@@ -1,6 +1,7 @@
 # LATOKEN C# Client Library (Early Beta version)
 
 LATOKEN C# Client Library aims to help developers to integrate with the [LATOKEN trading API](https://api.latoken.com/doc/v2/). 
+The WebSocket connection is based on the STOMP protocol. More details can be found [here](https://stomp.github.io/).
 
 **Please note that the library in Early Beta, and LATOKEN doesn't take any responsibility for the damages occurred while using this code.**
 **If you think something is broken or missing, please create an [issue](https://github.com/LATOKEN/latoken-api-v2-dotnet-client/issues).**
@@ -8,60 +9,70 @@ LATOKEN C# Client Library aims to help developers to integrate with the [LATOKEN
 
 
 ## Getting started
+You can install this as a Nuget package: Latoken.Api.Client.Library 1.0.0
 
-Make sure you have installed these Nuget packages:
+Alternatively, you can use the source code, but make sure you have installed these Nuget packages:
 * Microsoft.Extensions.Logging Version: 5.0.0
 * Newtonsoft.Json Version 12.0.3
-* Serilog Version: 2.8.0
 * Websocket.Client Version: 4.3.35
-* MathNet.Numerics Version: 4.15.0
 
+## Important
+Note that this library is not thread-safe. Don't attempt to send orders from multiple threads etc.
 
 ## LARestClient class to interract with the REST API
 
-**Get a list of all accounts**
+**Get a list of all account balances**
 ````C#
-    var latokenRestClient =
-            new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
-
     //Generate your public and private API keys on this page https://latoken.com/account/apikeys
     ClientCredentials credentials = new ClientCredentials
     {
         ApiKey = "Your Public API Key",
         ApiSecret = "Your Private API Key"
     };
-    latokenRestClient.SetCredentials(credentials);                      
 
-    System.Collections.Generic.List<Account> result = latokenRestClient.GetAccounts().Result;
+    var latokenRestClient =
+            new LARestClient(credentials, new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
+
+    
+
+    List<Balance> balances = await latokenRestClient.GetBalances();
+
 ````
 
 **Placing a limit order**
 ````C#
-    var latokenRestClient =
-            new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
-
     //Generate your public and private API keys on this page https://latoken.com/account/apikeys
     ClientCredentials credentials = new ClientCredentials
     {
         ApiKey = "Your Public API Key",
         ApiSecret = "Your Private API Key"
     };
-    latokenRestClient.SetCredentials(credentials);                      
 
+    var latokenRestClient =
+            new LARestClient(credentials, new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
+
+   
+    //Getting UUID strings representing IDs of the corresponding currencies/assets
+    //You might want to cache this, since this is static data, and  you don't need to fetch it each time
+    var freeCoin = (await latokenRestClient.GetCurrency("FREE")).Id;
+    var usdtCoin = (await latokenRestClient.GetCurrency("USDT")).Id;
+
+    //Consult https://api.latoken.com/doc/v2/#operation/placeOrder for possible field values
+    //Also, follow price and qty format as described on this page, use comma only to separate the decimal part
     OrderCommand orderCommand = new OrderCommand
     {
-        BaseCurrency = latokenRestClient.GetCurrency("FREE").Result.Id,
-        QuoteCurrency = latokenRestClient.GetCurrency("USDT").Result.Id,
+        BaseCurrency = baseCurrency,
+        QuoteCurrency = quoteCurrency,
         Side = "BUY",
         Condition = "GTC",
         Type = "LIMIT",                
         Quantity = "1.0",
         Price = "1.0",
         ClientOrderId = "C# Client Test",
-        Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+        Timestamp = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds
 
     };
-    OrderResponse result = latokenRestClient.PlaceOrder(orderCommand).Result;
+    OrderResponse result = await latokenRestClient.PlaceOrder(orderCommand);
 ````
 
 
@@ -98,34 +109,40 @@ Information about our REST API specification [LATOKEN API v2 docs](https://api.l
 **Get order book for FREE/USDT pair**
 ````C#
 
-       var latokenRestClient =
-                new LARestClient(new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
-
-       ClientCredentials credentials = new ClientCredentials
+        ClientCredentials restCredentials = new ClientCredentials
        {
            Alias = "TestCSharpClient",
            ApiKey = "Your Public API Key",
            ApiSecret = "Your Private API Key"                
        };
+       var latokenRestClient =
+                new LARestClient(restCredentials, new HttpClient() { BaseAddress = new Uri("https://api.latoken.com") });
 
             
-       latokenRestClient.SetCredentials(credentials);
-       LatokenUser result = latokenRestClient.GetUser().Result;
+       LatokenUser getUserResult = await latokenRestClient.GetUser();
 
-       credentials.UserId = result.Id;
+       ClientCredentials wsCredentials = new ClientCredentials
+       {
+           Alias = "TestCSharpClient",
+           ApiKey = "Your Public API Key",
+           ApiSecret = "Your Private API Key",
+           UserId = getUserResult.Id
+       };
 
-       var wsClient = new LAWsClient(credentials, true);
+       var wsClient = new LAWsClient(wsCredentials, true);
        wsClient.OnOpened += WSClient_OnOpened;
        wsClient.OnClosed += WSClient_OnClosed;
        wsClient.OnError += WSClient_OnError;
 
             
        wsClient.Start();
-       Thread.Sleep(15000);
+       await Task.Delay(15000);
 
 
-       var freeCoin = latokenRestClient.GetCurrency("FREE").Result.Id;
-       var usdtCoin = latokenRestClient.GetCurrency("USDT").Result.Id;
+       //Getting UUID strings representing IDs of the corresponding currencies/assets
+       //You might want to cache this, since this is static data, and  you don't need to fetch it each time
+        var freeCoin = (await latokenRestClient.GetCurrency("FREE")).Id;
+        var usdtCoin = (await latokenRestClient.GetCurrency("USDT")).Id;
                 
        wsClient.SubscribeOrderBookEvents(freeCoin, usdtCoin,
        delegate (OrderBookChange orderBookChange, string baseId, string quoteId, DateTime dateTime) {

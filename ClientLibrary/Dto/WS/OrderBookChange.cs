@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace Latoken_CSharp_Client_Library.Dto.WS
+namespace Latoken.Api.Client.Library.Dto.WS
 {
     public class OrderBookChange
     {

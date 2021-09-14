@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace LatokenLatoken_CSharp_Client_Library {
+namespace Latoken.Api.Client.Library {
     public class Order
     {
         [JsonProperty(PropertyName = "id")]

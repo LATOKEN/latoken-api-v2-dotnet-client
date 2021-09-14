@@ -1,9 +1,6 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Latoken_CSharp_Client_Library.Dto.WS
+namespace Latoken.Api.Client.Library.Dto.WS
 {
     public class SubscriptionMessage<T>
     {

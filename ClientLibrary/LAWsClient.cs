@@ -1,10 +1,9 @@
-﻿using Latoken_CSharp_Client_Library.Abstract;
-using Latoken_CSharp_Client_Library.Commands.Stomp;
-using Latoken_CSharp_Client_Library.Constants;
-using Latoken_CSharp_Client_Library.Dto.WS;
-using Latoken_CSharp_Client_Library.Utils.Configuration;
-using LatokenLatoken_CSharp_Client_Library;
-using LatokenLatoken_CSharp_Client_Library.Dto.WS;
+﻿using Latoken.Api.Client.Library.Abstract;
+using Latoken.Api.Client.Library.Commands.Stomp;
+using Latoken.Api.Client.Library.Constants;
+using Latoken.Api.Client.Library.Dto.WS;
+using Latoken.Api.Client.Library.Utils.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,7 +14,7 @@ using System.Threading.Tasks;
 using Websocket.Client;
 using Websocket.Client.Models;
 
-namespace Latoken_CSharp_Client_Library
+namespace Latoken.Api.Client.Library
 {
     public class LAWsClient : ILAWsClient, IDisposable
     {
@@ -28,14 +27,16 @@ namespace Latoken_CSharp_Client_Library
         private long _lastMessageTimestamp = DateTime.UnixEpoch.Ticks;
         private CancellationTokenSource _heartbeatStoppingToken;
 
+        private readonly ILogger<LAWsClient> _logger;
+
         public event Action OnOpened;
         public event Action<WebSocketCloseStatus?, string> OnClosed;
         public event Action<string, string> OnError;
 
         private const int HEARTBEAT_INTERVAL_MS = 10000;
 
-        public LAWsClient(ClientCredentials client = null, bool autoReconnect = true)
-        {            
+        public LAWsClient(ClientCredentials client = null, bool autoReconnect = true, ILogger<LAWsClient> logger = null)
+        {   
             //should be 2 times more than stomp heartbeat delay 
             var timeout = TimeSpan.FromMilliseconds(HEARTBEAT_INTERVAL_MS);
             var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
@@ -45,29 +46,24 @@ namespace Latoken_CSharp_Client_Library
                     KeepAliveInterval = timeout,
                 }
             });
-            Console.WriteLine($"Trying to establish web socket connection to {ApiPath.LAWSApiUrl}");
-            _webSocket = new WebsocketClient(new Uri(ApiPath.LAWSApiUrl), factory);
-            SetCredentials(client);
+            _webSocket = new WebsocketClient(new Uri(ApiPath.s_latokenWSURL), factory);
+
+            _client = client;
+            _logger = logger;
+
+            _webSocket.Name = client.UserId;
             _webSocket.ReconnectTimeout = timeout;
             _webSocket.ErrorReconnectTimeout = TimeSpan.FromMilliseconds(HEARTBEAT_INTERVAL_MS * 2);
             _webSocket.IsReconnectionEnabled = autoReconnect;
             _webSocket.DisconnectionHappened.Subscribe(WS_OnDisconnect);
             _webSocket.ReconnectionHappened.Subscribe(WS_OnReconnect);
             _webSocket.MessageReceived.Subscribe(WS_OnMessage);
+            _logger?.LogInformation($"Trying to establish web socket connection to {ApiPath.s_latokenWSURL}");
             //this method will not throw an exception
             _webSocket.Start();
         }
 
-        private void SetCredentials(ClientCredentials client)
-        {
-            if (client != null)
-            {
-                _client = client;
-                _webSocket.Name = client.UserId;
-                Console.WriteLine($"Client {client.UserId} credentials for web socket has been set.");
-            }
-        }
-
+      
         private bool TryGetUTF8DecodedString(byte[] bytes, out string s)
         {
             s = null;
@@ -86,7 +82,7 @@ namespace Latoken_CSharp_Client_Library
 
         private void WS_OnReconnect(ReconnectionInfo info)
         {
-            Console.WriteLine($"Reconnection happened with type: {info.Type}");
+            _logger?.LogInformation($"Reconnection happened with type: {info.Type}");
 
             if (_client != null)
                 _webSocket.Name = _client.UserId;
@@ -102,11 +98,13 @@ namespace Latoken_CSharp_Client_Library
             Interlocked.Exchange(ref _stompConnected, 0);
             CleanWSData();
             OnClosed?.Invoke(info.CloseStatus, info.CloseStatusDescription);
-            Console.WriteLine($"Disconnection happened with type: {info.Type}, status: {info.CloseStatus}, " +
+            _logger?.LogInformation($"Disconnection happened with type: {info.Type}, status: {info.CloseStatus}, " +
                                     $"description: {info.CloseStatusDescription}");
 
             if (info.Exception != null)
-                Console.WriteLine("Disconnection happened with the error!");
+            {
+                _logger?.LogInformation("Disconnection happened with the error!");
+            }
         }
 
         private void WS_OnMessage(ResponseMessage message)
@@ -130,16 +128,16 @@ namespace Latoken_CSharp_Client_Library
                         {
                             Interlocked.Exchange(ref _stompConnected, 1);
                             OnOpened?.Invoke();
-                            Console.WriteLine($"Latoken web socket stomp client connected successfully.");
+                            _logger?.LogInformation($"Latoken web socket stomp client connected successfully.");
                             _heartbeatStoppingToken = new CancellationTokenSource();
                             HeartBeat(_heartbeatStoppingToken.Token).ContinueWith(t =>
-                                Console.WriteLine("Heartbeat process faulted with error! Exception: {0}", t.Exception),
+                                _logger?.LogInformation("Heartbeat process faulted with error! Exception: {0}", t.Exception),
                                 TaskContinuationOptions.OnlyOnFaulted);
                         }
                         break;
                     case StompFrame.MESSAGE:
                         {
-                            Console.WriteLine($"Latoken web socket message acquired: '{frame.Body}'");
+                            _logger?.LogInformation($"Latoken web socket message acquired: '{frame.Body}'");
 
                             if (frame.Headers.ContainsKey(LAHeaders.SUBSCRIPTION_HEADER))
                             {
@@ -147,7 +145,7 @@ namespace Latoken_CSharp_Client_Library
 
                                 if (_dataHandlers.ContainsKey(subscriptionId))
                                 {
-                                    var subscrParts = subscriptionId.Split(ApiPath.STOMP_SEPARATOR);
+                                    var subscrParts = subscriptionId.Split(ApiPath.s_stompSeparator);
                                     //We have to free web socket execution thread as fast as possible
                                     //client should consider to use multithreading/parallelizing in case of heavy task
                                     switch (subscrParts[0])
@@ -178,28 +176,28 @@ namespace Latoken_CSharp_Client_Library
                                             }
                                             break;
                                         default:
-                                            Console.WriteLine($"Stomp message '{frame.Body}' received for unknown subscription id {subscriptionId} !");
+                                            _logger?.LogInformation($"Stomp message '{frame.Body}' received for unknown subscription id {subscriptionId} !");
                                             break;
                                     }
                                 }
                                 else
-                                    Console.WriteLine($"Stomp message '{frame.Body}' received for unsubscribed id {subscriptionId} !");
+                                    _logger?.LogInformation($"Stomp message '{frame.Body}' received for unsubscribed id {subscriptionId} !");
                             }
                             else
-                                Console.WriteLine($"Stomp message '{frame.Body}' doesn't belong to subscription type");
+                                _logger?.LogInformation($"Stomp message '{frame.Body}' doesn't belong to subscription type");
                         }
                         break;
                     case StompFrame.ERROR:
                         {
                             //TODO parse other error specific headers if applicable
                             OnError?.Invoke(frame.Headers[LAHeaders.MESSAGE_HEADER], frame.Body);
-                            Console.WriteLine($"Latoken web socket stomp error: '{frame.Body}' received!");
+                            _logger?.LogInformation($"Latoken web socket stomp error: '{frame.Body}' received!");
                         }
                         break;
                     default:
                         //this is ping
                         if (frame.Body != "\n")
-                            Console.WriteLine($"Latoken web socket unknown stomp command '{frame.Command}' received, content: '{frame.Body}'");
+                            _logger?.LogInformation($"Latoken web socket unknown stomp command '{frame.Command}' received, content: '{frame.Body}'");
                         break;
                 }
             }
@@ -217,7 +215,7 @@ namespace Latoken_CSharp_Client_Library
                     return true;
 
             OnError?.Invoke(LAHeaders.STOMP_NOT_ALIVE, string.Empty);
-            Console.WriteLine(LAHeaders.STOMP_NOT_ALIVE);
+            _logger?.LogInformation(LAHeaders.STOMP_NOT_ALIVE);
             return false;
         }
 
@@ -227,7 +225,7 @@ namespace Latoken_CSharp_Client_Library
                 return true;
 
             OnError?.Invoke(LAHeaders.WS_NOT_ALIVE, string.Empty);
-            Console.WriteLine(LAHeaders.WS_NOT_ALIVE);
+            _logger?.LogInformation(LAHeaders.WS_NOT_ALIVE);
             return false;
         }
 
@@ -248,7 +246,7 @@ namespace Latoken_CSharp_Client_Library
                         _webSocket.Send(StompMessageSerializer.Serialize(StompMessage.CreateConnectMessage(version, heartbeat)));
                 }
                 else
-                    Console.WriteLine("Stomp has been connected already;");
+                    _logger?.LogInformation("Stomp has been connected already;");
             }
         }
 
@@ -297,12 +295,12 @@ namespace Latoken_CSharp_Client_Library
 
             if (_subscriptionNonces[subscriptionId] != subscrMessage.Nonce)
             {
-                Console.WriteLine($"Stomp subscription {subscriptionId} expected nonce " +
-                                    $"{_subscriptionNonces[subscriptionId]} mismatch with received {subscrMessage.Nonce} !");
+                _logger?.LogInformation($"Stomp subscription {subscriptionId} expected nonce " +
+                                        $"{_subscriptionNonces[subscriptionId]} mismatch with received {subscrMessage.Nonce} !");
 
                 //pass subscriptionId for the manual resubscribing
                 OnError?.Invoke(LAHeaders.NONCE_MISMATCH_HEADER, subscriptionId);
-                _webSocket.Send(StompMessageSerializer.Serialize(StompMessage.CreateUnsubsribeMessage(subscriptionId)));
+                _webSocket.Send(StompMessageSerializer.Serialize(StompMessage.CreateUnsubscribeMessage(subscriptionId)));
                 _subscriptionNonces.Remove(subscriptionId);
                 _dataHandlers.Remove(subscriptionId);
 
@@ -331,7 +329,7 @@ namespace Latoken_CSharp_Client_Library
 
             if (!stopToken.IsCancellationRequested)
             {
-                Console.WriteLine("No incoming messages from the server! Going to disconnect..");
+                _logger?.LogInformation("No incoming messages from the server! Going to disconnect..");
                 await _webSocket.Reconnect();
                 OnError?.Invoke(LAHeaders.STOMP_NO_HEARTBEAT, "heartbeat interval: " + HEARTBEAT_INTERVAL_MS.ToString());
             }
@@ -356,7 +354,7 @@ namespace Latoken_CSharp_Client_Library
             if (_webSocket != null && _webSocket.IsRunning)
             {
                 foreach (var subscriptionId in _subscriptionNonces.Keys)
-                    _webSocket.Send(StompMessageSerializer.Serialize(StompMessage.CreateUnsubsribeMessage(subscriptionId)));
+                    _webSocket.Send(StompMessageSerializer.Serialize(StompMessage.CreateUnsubscribeMessage(subscriptionId)));
 
                 _webSocket.Send(StompMessageSerializer.Serialize(StompMessage.CreateDisconnectMessage("bye-bye")));
                 _webSocket.Stop(WebSocketCloseStatus.NormalClosure, "Trying to gracefully close web socket..");

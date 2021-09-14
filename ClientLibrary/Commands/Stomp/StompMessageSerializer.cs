@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Latoken_CSharp_Client_Library.Commands.Stomp
+namespace Latoken.Api.Client.Library.Commands.Stomp
 {
     public class StompMessageSerializer
     {

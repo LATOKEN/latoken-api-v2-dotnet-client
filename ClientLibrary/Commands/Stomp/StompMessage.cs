@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using Latoken_CSharp_Client_Library.Constants;
+using Latoken.Api.Client.Library.Constants;
 
-namespace Latoken_CSharp_Client_Library.Commands.Stomp
+namespace Latoken.Api.Client.Library.Commands.Stomp
 {
     public class StompMessage
     {
@@ -76,14 +75,14 @@ namespace Latoken_CSharp_Client_Library.Commands.Stomp
             return msg;
         }
 
-        public static StompMessage CreateSignedConnectMessage(string version, string heartbeat, string apiKey, string apiSecret, string hashAlgorithm = null)
+        public static StompMessage CreateSignedConnectMessage(string version, string heartbeat, string apiKey, string apiSecret)
         {
             string signData = ((long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds).ToString();
             var msg = new StompMessage(StompFrame.CONNECT);
             msg[LAHeaders.VERSION_HEADER] = version;
             msg[LAHeaders.HEARTBEAT_HEADER] = heartbeat;
             msg[LAHeaders.LA_APIKEY] = apiKey;
-            msg[LAHeaders.LA_DIGEST] = hashAlgorithm ?? LAHeaders.HASH_ALGO;
+            msg[LAHeaders.LA_DIGEST] = LAHeaders.HASH_ALGO;
             msg[LAHeaders.LA_SIGDATA] = signData;
             msg[LAHeaders.LA_SIGNATURE] = SignatureService.CreateSignature(apiSecret, signData);
             return msg;
@@ -97,7 +96,7 @@ namespace Latoken_CSharp_Client_Library.Commands.Stomp
             return msg;
         }
 
-        public static StompMessage CreateUnsubsribeMessage(string id)
+        public static StompMessage CreateUnsubscribeMessage(string id)
         {
             var msg = new StompMessage(StompFrame.UNSUBSCRIBE);
             msg[LAHeaders.ID_HEADER] = id;

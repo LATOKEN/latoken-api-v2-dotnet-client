@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Latoken_CSharp_Client_Library.Commands
+namespace Latoken.Api.Client.Library.Commands
 {
     public class WithdrawalCommand
     {

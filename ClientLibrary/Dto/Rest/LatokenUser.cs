@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace Latoken_CSharp_Client_Library.Dto.Rest
+namespace Latoken.Api.Client.Library.Dto.Rest
 {
     public class LatokenUser
     {

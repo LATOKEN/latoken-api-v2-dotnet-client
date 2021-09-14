@@ -6,39 +6,36 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
-using Latoken_CSharp_Client_Library.Commands;
-using Latoken_CSharp_Client_Library.Constants;
-using Latoken_CSharp_Client_Library.Dto.Rest;
-using Latoken_CSharp_Client_Library.LA.Commands;
-using Latoken_CSharp_Client_Library.Utils.Configuration;
-using LatokenLatoken_CSharp_Client_Library;
+using Latoken.Api.Client.Library.Commands;
+using Latoken.Api.Client.Library.Constants;
+using Latoken.Api.Client.Library.Dto.Rest;
+using Latoken.Api.Client.Library.LA.Commands;
+using Latoken.Api.Client.Library.Utils.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace Latoken_CSharp_Client_Library
+
+namespace Latoken.Api.Client.Library
 {
     public class LARestClient : ILARestClient, IDisposable
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<LARestClient> _logger;
-        private readonly ApiErrorParser _errorParser = new ApiErrorParser();
         private ClientCredentials _client;
 
-        public LARestClient(HttpClient httpClient)
+        public LARestClient(ClientCredentials client, HttpClient httpClient)
         {
+            _client = client;
             _httpClient = httpClient;
             // NOTE: latoken exchange will return 500 if response time exceeded  13 sec
             _httpClient.Timeout = TimeSpan.FromSeconds(15);
         }
         
-        public LARestClient(HttpClient httpClient, ILogger<LARestClient> logger) : this(httpClient)
+        public LARestClient(ClientCredentials client, 
+                            HttpClient httpClient, 
+                            ILogger<LARestClient> logger) : this(client, httpClient)
         {
             _logger = logger;
-        }
-
-        public void SetCredentials(ClientCredentials client)
-        {
-            _client = client;
         }
 
         public bool IsReady()
@@ -46,174 +43,176 @@ namespace Latoken_CSharp_Client_Library
             return _client != null;
         }
 
-        public async Task<OrderBook> GetOrderBook(string baseCurrency, string quoteCurrency, int limit = 100)
+        public Task<OrderBook> GetOrderBook(string baseCurrency, string quoteCurrency, int limit = 100)
         {
-            return await Get<OrderBook>(ApiPath.GetOrderBook(baseCurrency, quoteCurrency, limit));
+            var task = Get<OrderBook>(ApiPath.GetOrderBook(baseCurrency, quoteCurrency, limit));
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Pair>> GetPairs()
+        public Task<List<Pair>> GetPairs()
         {
-            return await Get<List<Pair>>(ApiPath.GetPairs);
+            var task = Get<List<Pair>>(ApiPath.GetPairs);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Pair>> GetAvailablePairs()
+        public Task<List<Pair>> GetAvailablePairs()
         {
-            return await Get<List<Pair>>(ApiPath.GetAvailablePairs);
+            var task = Get<List<Pair>>(ApiPath.GetAvailablePairs);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Pair> GetPair(string baseCurrency, string quoteCurrency)
+        public Task<Currency> GetCurrency(string currency)
         {
-            var pairs = await GetPairs();
-            var currencyBase = await GetCurrency(baseCurrency.ToUpper());
-            var currencyQuote = await GetCurrency(quoteCurrency.ToUpper());
-            return pairs.FirstOrDefault(x => x.BaseCurrency == currencyBase.Id && x.QuoteCurrency == currencyQuote.Id);
+            var task = Get<Currency>(ApiPath.GetCurrency(currency.ToUpper()));
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Pair> GetAvailablePair(string baseCurrency, string quoteCurrency)
+        public Task<List<Currency>> GetCurrencies()
         {
-            var pairs = await GetAvailablePairs();
-            var currencyBase = await GetCurrency(baseCurrency.ToUpper());
-            var currencyQuote = await GetCurrency(quoteCurrency.ToUpper());
-            return pairs.First(x => x.BaseCurrency == currencyBase.Id && x.QuoteCurrency == currencyQuote.Id);
+            var task = Get<List<Currency>>(ApiPath.GetCurrencies);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-
-        public async Task<Pair> GetPairByCurrencyId(string baseCurrencyId, string quoteCurrencyId)
+        public Task<List<Ticker>> GetTickers()
         {
-            var pairs = await GetPairs();
-            return pairs.FirstOrDefault(x => x.BaseCurrency == baseCurrencyId && x.QuoteCurrency == quoteCurrencyId);
+            var task = Get<List<Ticker>>(ApiPath.GetTickers);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Currency> GetCurrency(string currency)
+        public Task<Ticker> GetTicker(string baseCurrency, string quoteCurrency)
         {
-            return await Get<Currency>(ApiPath.GetCurrency(currency.ToUpper()));
+            var task = Get<Ticker>(ApiPath.GetTicker(baseCurrency.ToUpper(), quoteCurrency.ToUpper()));
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Currency>> GetCurrencies()
+        public Task<Rate> GetRate(string baseCurrency, string quoteCurrency)
         {
-            return await Get<List<Currency>>(ApiPath.GetCurrencies);
+            var task = Get<Rate>(ApiPath.GetRate(baseCurrency, quoteCurrency));
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Ticker>> GetTickers()
+        public Task<List<Trade>> GetAllTrades(string baseCurrency, string quoteCurrency)
         {
-            return await Get<List<Ticker>>(ApiPath.GetTickers);
+            var task = Get<List<Trade>>(ApiPath.GetAllTrades(baseCurrency.ToUpper(), quoteCurrency.ToUpper()));
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Ticker> GetTicker(string baseCurrency, string quoteCurrency)
+        public Task<List<Trade>> GetClientTrades(int page = 0, int size = 20)
         {
-            return await Get<Ticker>(ApiPath.GetTicker(baseCurrency.ToUpper(), quoteCurrency.ToUpper()));
+            var task = Get<List<Trade>>(ApiPath.GetClientTrades(page, size), true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Rate> GetRate(string baseCurrency, string quoteCurrency)
+        public Task<List<Trade>> GetClientTradesPair(string baseCurrency, string quoteCurrency, int page = 0, int size = 20)
         {
-            return await Get<Rate>(ApiPath.GetRate(baseCurrency, quoteCurrency));
+            var task = Get<List<Trade>>(ApiPath.GetClientTradesPair(baseCurrency.ToUpper(), quoteCurrency.ToUpper(), page, size), true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Trade>> GetAllTrades(string baseCurrency, string quoteCurrency)
+        public Task<List<Order>> GetOrders(int size = 100)
         {
-            return await Get<List<Trade>>(ApiPath.GetAllTrades(baseCurrency.ToUpper(), quoteCurrency.ToUpper()));
+            var task = Get<List<Order>>(ApiPath.GetOrders(size), true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Trade>> GetClientTrades(int page = 0, int size = 20)
-        {
-            return await Get<List<Trade>>(ApiPath.GetClientTrades(page, size), true);
-        }
-
-        public async Task<List<Trade>> GetClientTradesPair(string baseCurrency, string quoteCurrency, int page = 0, int size = 20)
-        {
-            return await Get<List<Trade>>(ApiPath.GetClientTradesPair(baseCurrency.ToUpper(), quoteCurrency.ToUpper(), page, size), true);
-        }
-
-        public async Task<List<Order>> GetOrders(int size = 100)
-        {
-            return await Get<List<Order>>(ApiPath.GetOrders(size), true);
-        }
-
-        public async Task<List<Order>> GetOrdersPair(string baseCurrency, string quoteCurrency, int page = 0, int size = 20)
+        public Task<List<Order>> GetOrdersPair(string baseCurrency, string quoteCurrency, int page = 0, int size = 20)
         {
             var uri = ApiPath.GetOrdersPair(baseCurrency.ToUpper(), quoteCurrency.ToUpper(), page, size);
-            return await Get<List<Order>>(uri, true);
+            var task = Get<List<Order>>(uri, true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<OrderResponse> PlaceOrder(OrderCommand command)
+        public Task<OrderResponse> PlaceOrder(OrderCommand command)
         {
-            var res = await PostSafe<OrderResponse>(ApiPath.PlaceOrder, command, true);
-            res.Content.ErrorCode = res.Code;
-            return res.Content;
+            var task = Post<OrderResponse>(ApiPath.PlaceOrder, command, true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<OrderResponse> CancelOrder(OrderIdCommand command)
+        public Task<OrderResponse> CancelOrder(OrderIdCommand command)
         {
-            var res = await PostSafe<OrderResponse>(ApiPath.CancelOrder, command, true);
-            res.Content.ErrorCode = res.Code;
-            return res.Content;
+            var task = Post<OrderResponse>(ApiPath.CancelOrder, command, true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Order> GetOrder(OrderIdCommand command)
+        public Task<Order> GetOrder(OrderIdCommand command)
         {
-            return await Get<Order>(ApiPath.GetOrder(command.Id), true);
+            var task = Get<Order>(ApiPath.GetOrder(command.Id), true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Transaction> TransferInternal(TransferCommand command)
+        public Task<Transaction> TransferInternal(TransferCommand command)
         {
-            return await Post<Transaction>(ApiPath.TransferByUserId, command, true);
+            var task = Post<Transaction>(ApiPath.TransferByUserId, command, true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Transaction> SpotWithdraw(SpotTransferCommand command)
+        public Task<Transaction> SpotWithdraw(SpotTransferCommand command)
         {
-            return await Post<Transaction>(ApiPath.SpotWithdraw, command, true);
+            var task = Post<Transaction>(ApiPath.SpotWithdraw, command, true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<List<Balance>> GetBalances(bool zeros = true)
+        public Task<List<Balance>> GetBalances(bool zeros = true)
         {
-            return await Get<List<Balance>>(ApiPath.GetBalances(zeros), true);
+            var task = Get<List<Balance>>(ApiPath.GetBalances(zeros), true);
+            task.ConfigureAwait(false);
+
+            return task;
         }
 
-        public async Task<LatokenUser> GetUser()
+        public Task<LatokenUser> GetUser()
         {
-            return await Get<LatokenUser>(ApiPath.GetUser, true);
+            var task = Get<LatokenUser>(ApiPath.GetUser, true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<CancelAllOrdersResponce> CancelAllOrders(string baseCurrency, string quoteCurrency)
+        public Task<CancelAllOrdersResponce> CancelAllOrders(string baseCurrency, string quoteCurrency)
         {
-            var res =await PostSafe<CancelAllOrdersResponce>(ApiPath.CancelAllOrders(baseCurrency, quoteCurrency), null, true);
-            return res.Content;
+            var task = Post<CancelAllOrdersResponce>(ApiPath.CancelAllOrders(baseCurrency, quoteCurrency), null, true);
+            task.ConfigureAwait(false);
+            return task;
         }
         
 
-        public async Task<Balance> GetBalanceByType(string currency, TypeOfAccount typeOfAccount)
+        public Task<Balance> GetBalanceByType(string currency, TypeOfAccount typeOfAccount)
         {
-            return await Get<Balance>(ApiPath.GetBalancesByType(currency, typeOfAccount.ToString()), true);
+            var task = Get<Balance>(ApiPath.GetBalancesByType(currency, typeOfAccount.ToString()), true);
+            task.ConfigureAwait(false);
+            return task;
         }
 
-        public async Task<Klines> GetKlines(string baseCurrency, string quoteCurrency, int intervalMin, long from, long to)
+        private Task<T> Get<T>(string url, bool auth = false)
         {
-            var symbol = HttpUtility.UrlEncode(baseCurrency + "/" + quoteCurrency);
-            return await Get<Klines>(ApiPath.GetKlines(symbol, intervalMin, from, to));
+            var response = PerformRequest(HttpMethod.Get, url, auth);
+            return DeserializeJsonFromStream<T>(response.Result);
         }
 
-        private async Task<T> Get<T>(string url, bool auth = false)
+        private Task<T> Post<T>(string url, object body, bool auth = false)
         {
-            var response = await PerformRequest(HttpMethod.Get, url, auth);
-            return await DeserializeJsonFromStream<T>(response);
-        }
-
-        [Obsolete("Consider using error response instead of success response and exception. Use PostSafe")]
-        private async Task<T> Post<T>(string url, object body, bool auth = false)
-        {
-            var response = await PerformRequest(HttpMethod.Post, url, auth, body);
-            return await DeserializeJsonFromStream<T>(response);
+            var response =  PerformRequest(HttpMethod.Post, url, auth, body);
+            return DeserializeJsonFromStream<T>(response.Result);
         }
         
-        private async Task<PostSafeResponse<T>> PostSafe<T>(string url, object body, bool auth = false)
-        {
-            var response = await PerformRequest(HttpMethod.Post, url, auth, body);
-            var content = await DeserializeJsonFromStream<T>(response, false);
-            var errorCode = await _errorParser.GetErrorCode(response);
-            return new PostSafeResponse<T>(content, errorCode);
-        }
-
-        private async Task<HttpResponseMessage> PerformRequest(HttpMethod httpMethod, string url, bool auth = false, object body = null)
+        private Task<HttpResponseMessage> PerformRequest(HttpMethod httpMethod, string url, bool auth = false, object body = null)
         {
             var request = new HttpRequestMessage(httpMethod, url);
             var splitUrl = url.Split("?");
@@ -246,7 +245,7 @@ namespace Latoken_CSharp_Client_Library
                 request.Headers.Add(LAHeaders.LA_DIGEST, LAHeaders.HASH_ALGO);    
             }
 
-            var response = await _httpClient.SendAsync(request);
+            var response = _httpClient.SendAsync(request);
             return response;
         }
         
@@ -280,16 +279,6 @@ namespace Latoken_CSharp_Client_Library
                                
         }
 
-        private class PostSafeResponse<T>
-        {
-            public PostSafeResponse(T content, ApiResponseCode code)
-            {
-                Content = content;
-                Code = code;
-            }
-            public T Content { get; }
-            public ApiResponseCode Code { get; }
-        }
 
         public void Dispose()
         {
