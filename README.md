@@ -54,8 +54,8 @@ Note that this library is not thread-safe. Don't attempt to send orders from mul
    
     //Getting UUID strings representing IDs of the corresponding currencies/assets
     //You might want to cache this, since this is static data, and  you don't need to fetch it each time
-    var freeCoin = (await latokenRestClient.GetCurrency("FREE")).Id;
-    var usdtCoin = (await latokenRestClient.GetCurrency("USDT")).Id;
+    var baseCurrency = (await latokenRestClient.GetCurrency("FREE")).Id;
+    var quoteCurrency = (await latokenRestClient.GetCurrency("USDT")).Id;
 
     //Consult https://api.latoken.com/doc/v2/#operation/placeOrder for possible field values
     //Also, follow price and qty format as described on this page, use comma only to separate the decimal part
@@ -63,12 +63,14 @@ Note that this library is not thread-safe. Don't attempt to send orders from mul
     {
         BaseCurrency = baseCurrency,
         QuoteCurrency = quoteCurrency,
-        Side = "BUY",
+        BaseCurrency = freeCoin,
+        QuoteCurrency = usdtCoin,
+        Side = "SELL",
         Condition = "GTC",
         Type = "LIMIT",                
         Quantity = "1.0",
         Price = "1.0",
-        ClientOrderId = "C# Client Test",
+        ClientOrderId = Guid.NewGuid().ToString(),
         Timestamp = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds
 
     };
