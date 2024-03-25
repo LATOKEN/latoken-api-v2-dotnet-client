@@ -177,8 +177,3 @@ Information about our WebSocket API specification [LATOKEN API v2 docs](https://
 |`SubscribeMyTradeEvents`|Subscribe for private trade events| [Trades](https://api.latoken.com/doc/ws/#section/Trades)
 |`SubscribeBalanceEvents`|Subscribe for balance on your accounts events| [Accounts](https://api.latoken.com/doc/ws/#section/Accounts)
 
-
-
-
-## Do you have any API questions? 
-[Use Telegram](https://telegram.org/), and talk to us in our channel: https://t.me/latoken_api
